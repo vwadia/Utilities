@@ -1,0 +1,346 @@
+% script to extract responses to images during screening
+%
+% Tasks it performs:
+% 1 - creating strctCells
+% 2 - Collect timecourse and make rasters+psths
+% 3 - Plotting rasters 10 images at a time
+% 4 - Anovas for psth
+% 5 - calculating population response vectors
+% 6 - (for BR) finding stimulus images with the largest difference amongst pop vectors
+%
+% vwadia/August2019
+%% paths to stuff and extract cells
+dbstop if error
+
+% need to do everything from the server - this address is the same for
+% connection server from lab desktop and computer at Cedars
+cd('Z:\LabUsers\vwadia\SUAnalysis');
+addpath(genpath('osortTextUI'));
+addpath(genpath('Jan_Sternberg_Screening_Data')); % for spike extracion fcuntinos
+
+
+% basePath = 'Z:\dataRawEpilepsy\P69CS\10272020_screeningVarun';
+% basePath = 'Z:\dataRawEpilepsy\P70CS\04112020_varunScreen';
+% basePath = 'Z:\dataRawEpilepsy\P70CS\07112020_varunScreen';
+% basePath = 'Z:\dataRawEpilepsy\P70CS\11122020_varunScreen';
+% basePath = 'Z:\LabUsers\vwadia\SUAnalysis\Face_Screening\P71CS\Screening_Session_1_20201118';
+% basePath = 'Z:\LabUsers\vwadia\SUAnalysis\Object_Screening\P71CS\ObjectScreening_Session_1_20201121';
+% basePath = 'Z:\LabUsers\vwadia\SUAnalysis\Object_Screening\P71CS\LargeObjectScreening_Session_1_20201123';
+% basePath = 'Z:\LabUsers\vwadia\SUAnalysis\Object_Screening\P71CS\ObjectScreening_Session_2_20201124';
+basePath = 'Z:\LabUsers\vwadia\SUAnalysis\Object_Screening\P71CS\FastObjectScreening_Session_1_20201125';
+
+sortPath = '\sort';
+finalPath = '\final';
+rawPath = '\raw';
+
+pathTaskCode = 'Z:\LabUsers\vwadia\screeningTaskVarun';
+addpath(pathTaskCode);
+setTTLCodes;
+
+% For Deep Learning stuff
+% --------------------------------------------------------------------
+% pathStimuli = 'Z:\LabUsers\vwadia\screeningTaskVarun\AICScreeningStimuli_png';
+% pathStimuli = 'Z:\LabUsers\vwadia\screeningTaskVarun\ResizedAICScreeningStimuli';
+% pathStimuli = 'Z:\LabUsers\vwadia\screeningTaskVarun\ResizedAICScreeningStimuli';
+pathStimuli = [basePath filesep 'stimuliUsed'];
+% --------------------------------------------------------------------
+
+% collecting events
+% -------------------------------------------------------------------------
+events = getRawTTLs([basePath filesep rawPath filesep 'Events.nev'], 1);
+% keyboard
+% events = events(146:end, :); % for P69 AICScreen session 1
+% events = events(73:1495, :); % for P70 AICScreen session 1
+% events = events(5:988, :); % for P70 AICScreen session 2
+% events = events(14:1026, :); % for P70 AICScreen session 2
+% -------------------------------------------------------------------------
+
+
+% taskStruct = load([basePath filesep 'P69CS_2_Sub_6_Block']);
+% taskStruct = load([basePath filesep 'P70CS_3_Sub_6_Block']);
+% taskStruct = load([basePath filesep 'P70CS_4_Sub_6_Block']);
+% taskStruct = load([basePath filesep 'P70CSDay2_Sub_6_Block']);
+% taskStruct = load([basePath filesep 'P71CS_Sub_6_Block']);
+% taskStruct = load([basePath filesep 'P71CS_Object_Sub_6_Block']);
+% taskStruct = load([basePath filesep 'P71CS_LargeObject_Sub_6_Block']);
+% taskStruct = load([basePath filesep 'P71CS_RecScreen2_Sub_6_Block']);
+taskStruct = load([basePath filesep 'P71CS_Fast_Sub_6_Block']);
+
+[dupCells, strctCells] = extractCells([basePath filesep sortPath filesep finalPath] , basePath);
+
+%% things that need manual setting
+keyboard
+
+
+
+%% make screeningData struct
+
+screeningData = struct;
+screeningData.psth = cell(length(strctCells), 3);
+screeningData.responses = cell(length(strctCells), 1);
+screeningData.avgResponses = cell(length(strctCells), 1);
+% find(events(:, 2) == 0) % had to disconnect the pci-e cable again
+% spits out 2, 6, 768, 769 for P63 Screening 2
+experimentBegin = find(events(:, 2) == EXPERIMENT_ON);
+experimentEnd = find(events(:, 2) == EXPERIMENT_OFF);
+
+screeningData.events = events(experimentBegin:experimentEnd, :);
+
+imageOffPoints = find(screeningData.events(:, 2) == IMAGE_OFF);
+imageOnPoints = find(screeningData.events(:, 2) == IMAGE_ON);
+
+imageOffTimes = screeningData.events(imageOffPoints, 1);
+imageOnTimes = screeningData.events(imageOnPoints, 1);
+
+if isequal(length(imageOffTimes), length(imageOnTimes))
+    stimDur = median(imageOffTimes - imageOnTimes)*1e-3;
+    stimOffDur = (imageOnTimes(2:end) - imageOffTimes(1:end-1));
+    stimOffDur = median(stimOffDur(stimOffDur < 1e6))*1e-3;
+else
+    stimDur = (imageOffTimes(1) - imageOnTimes(1))*1e-3;
+    stimOffDur = (imageOnTimes(2) - imageOffTimes(1))*1e-3;
+end
+
+order = taskStruct.order;%repmat(taskStruct.order, [10, 1]);
+order = reshape(order, [], 1); % stacking all the columns on top of each other
+
+imageIDs = unique(order);
+numRepetitions = taskStruct.num_blocks;
+
+%% extract rasters and psths
+
+% for raster extraction and plotting
+% -------------------------------------------------------------------------
+timelimits = [-0.5 0.5]; % -0.5 0.5 for fast
+Binsize = 100; % ms, for smoothing psths
+offset = 50;
+windowLength = 200;
+windowBegin = 300+offset; %((timelimits(2) - timelimits(1)) - 1)*1e3;
+windowEnd = windowBegin+windowLength;
+% -------------------------------------------------------------------------
+[sortedOrder, correctOrder] = sortrows(order);
+% using Jan's functions
+for cellIndex = 1:length(strctCells)
+    
+    [psth, psth1, times] = cellfile2rasterVarun(strctCells(cellIndex),timelimits,Binsize,IMAGE_ON,screeningData.events);
+    screeningData.psth{cellIndex, 1} = psth(:, correctOrder)'; % arranges the psth so all images are clumped together
+    screeningData.psth{cellIndex, 2} = psth1(:, correctOrder); % rasters
+    screeningData.psth{cellIndex, 3} = times; % a linspace from timecourse(1) to timecourse(2)
+    screeningData.responses{cellIndex} = mean(screeningData.psth{cellIndex, 2}(windowBegin:windowEnd, :), 1);
+end
+
+for cellIndex = l(strctCells)
+    for i = 1:length(imageIDs)
+        screeningData.avgResponses{cellIndex}(i, :) = mean(screeningData.responses{cellIndex}(1, (numRepetitions*(i-1)+1):(numRepetitions*(i-1)+numRepetitions)));
+    end
+end
+%% ranksum test for selectivity - check if this is legit
+
+[screeningData] = responsivityCheck(windowBegin, windowEnd, offset, screeningData, 0.05);
+
+%% ANOVA for selectivity
+
+% making for different anova types
+% standard ----------------
+anovaType = '1xN';
+labels = sortedOrder;
+
+% category ----------------
+% avg across identities for AIC
+% real photo and cartoon 
+anovaType = 'Category';
+labels = [];
+for i = 1:34 % unique identities in AIC_2 P70
+    labels = vertcat(labels, repmat(i, 12, 1));
+end
+   % ANOVAs not sure how useful these are
+%     if(AIC_avgAcrossIdentities)
+%         % AIC experiment
+%         %                 for i = 1:34 % unique identities in AIC_2 P70
+%         %                     sortedOrderAICAvg = vertcat(sortedOrderAICAvg, repmat(i, 12, 1));
+%         %                 end
+%         %                 for j = 35:47
+%         %                     sortedOrderAICAvg = vertcat(sortedOrderAICAvg, repmat(j, 6, 1));
+%         %                 end
+%         %         for i = 1:5
+%         %             catSize = [34 29 42 36 59]; % for fast screening Nov 21
+%         %             if i == 2 % faces
+%         %                 sortedOrderAICAvg = vertcat(sortedOrderAICAvg, repmat(i, 14*numRepetitions, 1));
+%         %             else
+%         %                 sortedOrderAICAvg = vertcat(sortedOrderAICAvg, repmat(i, 10*numRepetitions, 1));
+%         %             end
+%         for i = 1:52
+%             sortedOrderAICAvg = vertcat(sortedOrderAICAvg, repmat(i, 2*numRepetitions, 1));
+%         end
+%         [p_vis(cellIndex), ~, stats_vis(cellIndex)] = anova1(sum(stimONAll, 1), sortedOrderAICAvg, 'off');
+%         
+%     elseif(AIC_CartoonIdentity)
+%         for i = 1:3:length(imageIDs)
+%             stimCI = horzcat(stimCI, stimONAll(:, numRepetitions*(i-1)+1:numRepetitions*(i-1)+numRepetitions));
+%             sortedOrderCI = vertcat(sortedOrderCI, repmat(i, 6, 1));
+%         end
+%         [p_vis(cellIndex), ~, stats_vis(cellIndex)] = anova1(sum(stimCI, 1), sortedOrderCI, 'off');
+%     elseif(standard1xNAnova)
+%         % 1xN anova selectivity
+%         [p_vis(cellIndex), ~, stats_vis(cellIndex)] = anova1(sum(stimONAll, 1), sortedOrder, 'off');
+%     end
+
+
+
+
+
+%% Finding stim for rivalry
+
+[stim1BR, stim2BR, responseMatrix, screeningData] = findStimPairBR(windowBegin, windowEnd, windowLength, screeningData);
+
+
+%% Plotting - all rasters
+
+imagesPerSubplot = 10;
+subPlotNum = 10;
+numFigsPerCell = ceil(length(imageIDs)/(imagesPerSubplot*subPlotNum)); % each figure has max 100 images plotted
+PlotRastersScreening(basePath, imagesPerSubplot, subPlotNum, numFigsPerCell, strctCells)
+        
+        %% making images correct type
+        %{
+addpath(genpath('Z:\LabUsers\vwadia\SUAnalysis\natsortfiles'));
+
+imDir = dir(pathStimuli);
+imDir = imDir(~ismember({imDir.name}, {'.', '..', '.DS_Store'}));
+[~, natIdx] = natsortfiles({imDir.name});
+images = cell(length(imDir), 1);
+grayImages = zeros(224, 224, 70);
+
+for image = 1:length(imDir)
+    
+    images{image} = imread([imDir(natIdx(image)).folder filesep imDir(natIdx(image)).name]);
+    if length(size(images{image}))> 2
+        images{image} = images{image}(:, :, 1:3);
+        images{image} = rgb2gray(images{image});
+    end
+    grayImages(:, :, image) = single(imresize(images{image}, [224 224])); % resize and convert to correct format
+    
+end
+% these are in the right order for
+% grayImages = grayImages(:, :, 2:end);
+grayImages = grayImages(:, :, imageIDs);
+
+%% Deep network stuff
+
+addpath(genpath('Z:\LabUsers\vwadia\SUAnalysis\ObjectSpace'));
+
+
+% get responses via pinglei's function
+caffNet = load('imagenet-caffe-alex.mat'); % this has the correct format
+
+load resp_Alexnet.mat % will produce resp{1, 7} with the unit activations of the different layers
+
+% response of fc6 for 19606 images
+respAllImages = resp{3};% 3 is for fc6 before relu
+respAllImages = respAllImages';
+
+% % responses of fc6 to my screening images
+respScreeningImages = deepnetworkresponse(caffNet, grayImages, 17); % 17 is fc6 as returned by vl_simplenn
+respScreeningImages = respScreeningImages{1}';
+
+% load resp_1593_Screening_Objects.mat % this already has everything
+% dp PCA and keep the first 50 PCs
+[coeff,score,latent,tsquared,explained,mu] = pca(respScreeningImages);
+score = score(:, 1:50); % you can do this in STA figure or here
+
+
+%% STA plots
+% load([pathOut filesep 'P63CS.mat']);
+z_scored = 0;
+
+for cellIndex = 1:length(strctCells) % FFA neurons in P71
+    
+    
+    options.ind_train = 1:size(screeningData.avgResponses{cellIndex}, 1); % use all objects to calculate STA
+    
+    [hfig, maxCoords, minCoords, medCoords, max_stim, min_stim, med_stim] = STA_figure(screeningData.avgResponses{cellIndex}, score, options, z_scored); % pass score to this instead of projectedResponses
+%     if cellIndex == 42 || cellIndex == 46
+%         keyboard;
+%         title({['Cell number ' num2str(strctCells(cellIndex).Name)] 'STA and projections ', char(strctCells(cellIndex).brainArea)});
+%         print(hfig, [pathOut filesep 'STA_and_projections' filesep char(strctCells(cellIndex).brainArea) '_' num2str(strctCells(cellIndex).Name)], '-dpng', '-r0')
+%
+%     else
+        title({['Cell number ' num2str(strctCells(cellIndex).Name)] 'STA and projections ', strctCells(cellIndex).brainArea});
+        print(hfig, [pathOut filesep 'STA_and_projections' filesep strctCells(cellIndex).brainArea '_' num2str(strctCells(cellIndex).Name)], '-dpng', '-r0')
+
+
+%     end
+    
+    %     print(hfig, [pwd filesep 'test'], '-dpng', '-r0'); % test print
+    %     pause;
+    strctCells(cellIndex).maxCoords = maxCoords;
+    strctCells(cellIndex).minCoords = minCoords;
+    strctCells(cellIndex).medCoords = medCoords;
+    strctCells(cellIndex).maxStimImages = imageIDs(max_stim);
+    strctCells(cellIndex).minStimImages = imageIDs(min_stim);
+    strctCells(cellIndex).medStimImages = imageIDs(med_stim);
+    close all;
+end
+% save([pathOut filesep 'P71CS.mat'],'strctCells')
+
+% keyboard;
+% close all;
+        %}
+        % -------------------------------------------------------------------------
+        %%
+        %{
+%% finding the best stim pair for BR (option 2) - images that modulated most and least cells
+
+[so, co] = sortrows(sigImagesPop');
+sigImageCount = [];
+for i = unique(sigImagesPop)
+    % now sigimageCount(i) contains the number of cells in which image(i)
+    % evoked a sig response
+    sigImageCount(end+1) = length(find(so == i));
+end
+stim1BR = find(sigImageCount == max(sigImageCount));
+stim2BR = find(sigImageCount == min(sigImageCount));
+% assert(length(stim1BR) == 1); assert(length(stim2BR) == 1);
+
+
+for j = l(strctCells)
+    images = screeningData.sigImagesPerCell{j};
+    for k = images
+        screeningData.sigCellsPerImage{k, 1}(end+1) = j;
+        screeningData.sigCellsPerImage{k, 2}{end+1} = strctCells(j).brainArea;
+    end
+end
+
+%% finding only significant images
+
+
+screeningData.sigImagesPerCell = cell(length(strctCells), 2);
+screeningData.sigCellsPerImage = cell(length(imageIDs), 2);
+sigImagesPop = [];
+repetitions = 6;
+
+
+% doing stats
+% t-tests to see if it is visually responsive
+% per cell
+for cellIndex = l(strctCells)
+    % per stimulus
+    for imageIndex = 1:length(imageIDs)
+        
+        stimOFF = screeningData.psth{cellIndex, 2}(((abs(timelimits(1))*1000)-round(stimOffDur)):(abs(timelimits(1))*1000),...
+            ((repetitions*(imageIndex-1))+1):((repetitions*(imageIndex-1))+repetitions));
+        
+        stimON = screeningData.psth{cellIndex, 2}(501:1200,...
+            ((repetitions*(imageIndex-1))+1):((repetitions*(imageIndex-1))+repetitions));
+        [rejectNull, p] = ttest(mean(stimOFF, 1), mean(stimON, 1)); % make sure this is across trials
+        
+        if (rejectNull == 1 & p < 0.05)
+            screeningData.sigImagesPerCell{cellIndex, 1}(end+1) = imageIndex; % we want to plot this image
+            screeningData.sigImagesPerCell{cellIndex, 2}(end+1) = p;
+            sigImagesPop(end+1) = imageIndex;
+            
+        end
+    end
+    
+end
+        %}
