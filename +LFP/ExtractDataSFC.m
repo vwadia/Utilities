@@ -7,19 +7,26 @@ function [data_lfp, data_spike, params] = ExtractDataSFC(lfDat, spikDat, params,
 %% spike data
 
 % load in cells (if sigramp only)
-if strcmp(params.cells, 'allCells')
-    load([params.diskPath filesep 'Recall_Task' filesep 'AllITCells_500stim_Im.mat']);
-elseif strcmp(params.cells, 'respCells')
-    load([params.diskPath filesep 'Recall_Task' filesep 'AllRespITCells_500stim_Im.mat']);
-elseif strcmp(params.cells, 'sigRamp')
-    load([params.diskPath filesep 'Recall_Task' filesep 'AllITCells_500Stim_Im_SigRamp.mat']);
+if strcmp(params.cellArea(2:end), 'FFA')
+    if strcmp(params.cells, 'allCells')
+        load([params.diskPath filesep 'Recall_Task' filesep 'AllITCells_500stim_Im.mat']);
+    elseif strcmp(params.cells, 'respCells')
+        load([params.diskPath filesep 'Recall_Task' filesep 'AllRespITCells_500stim_Im.mat']);
+    elseif strcmp(params.cells, 'sigRamp')
+        load([params.diskPath filesep 'Recall_Task' filesep 'AllITCells_500Stim_Im_SigRamp.mat']);
+    end
+else
+    
+    load([params.diskPath filesep params.sessDir filesep 'PsthandResponses'])
+    load([params.diskPath filesep params.sessDir filesep 'strctCells'])
+    psths = screeningPsth;
 end
 
 strctCELL = struct2cell(strctCells');
 strctCELL = strctCELL';
 
 % temporary - removing shitty neurons
-badCells = [1085, 1759, 713, 5477, 2099, 750, 773, 819]'; 
+badCells = [1085, 1759, 713, 5477, 2099, 750, 773, 819]';
 allCells = cell2mat(strctCELL(:, 1));
 goodCells = ~ismember(allCells, badCells);
 
@@ -28,8 +35,6 @@ strctCELL = strctCELL(goodCells, :);
 psths = psths(goodCells, :);
 responses = responses(goodCells, :);
 
-
-% load in per session RecallData_NoFreeRec.mat - has cells from all brain areas
 relevantCells = cellfun(@(x,y) strcmp(x, params.cellArea) && strcmp(y, sessDir{3}), strctCELL(:, 4), strctCELL(:, 8), 'UniformOutput', false);
 relevantCells = cell2mat(relevantCells);
 sess_strctCells = strctCells(relevantCells);
@@ -173,11 +178,11 @@ parfor chan_ind = 1:length(chans)
 end
 
 % Optional: Check thrwsholds to remove grounds
-chan_stddevs = std(dataRawReshaped');
-if mean(chan_stddevs)/min(chan_stddevs) > 2 % means one is reference channel
-    [~, ref] = min(chan_stddevs);
-    dfLP(ref) = [];
-end
+% chan_stddevs = std(dataRawReshaped');
+% if mean(chan_stddevs)/min(chan_stddevs) > 2 % means one is reference channel
+%     [~, ref] = min(chan_stddevs);
+%     dfLP(ref) = [];
+% end
 
 % rearrange for ppc function
 for idx = 1:length(dfLP)
