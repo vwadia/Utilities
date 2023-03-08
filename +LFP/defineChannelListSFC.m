@@ -2,9 +2,9 @@ function [dirID] = defineChannelListSFC(patIDs, condition, channelType)
 % function to define the channel list for all patients 
 % then choose either the cell channels or just the non-noise channels
 % INPUTS:
-%     0. Patient IDs (so you can do only 1? future implementation)
-%     1. Condition (screening vs Im or Encoding vs Im)
-%     2. Type of channels desired (cell channels or non-noise channels)
+%     1. Patient IDs (so you can do only 1 or any combination)
+%     2. Condition (screening vs Im or Encoding vs Im)
+%     3. Type of channels desired (cell channels or non-noise channels)
 
 % OUTPUTS:
 %     1. A directory list for the inputted condition

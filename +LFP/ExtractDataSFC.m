@@ -152,7 +152,7 @@ parfor chan_ind = 1:length(chans)
     maxLength = cellfun(@(x) length(x), dataFilteredLowPass);
     maxLength = max(maxLength);
     
-    % make sure size matches spike data
+    % make sure size matches spike data  
     if size(data_spike, 1) ~= maxLength
         maxLength = size(data_spike, 1);
     end

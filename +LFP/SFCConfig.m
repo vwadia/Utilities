@@ -24,7 +24,7 @@ setDiskPaths
 taskCodePath = [boxPath filesep 'recallTaskVarun']; % more events described here
 addpath(taskCodePath); setTTLCodes;
 addpath(['Code' filesep 'SFCpackage' filesep 'helpers']);
-addpath(genpath('osortTextUI'));
+addpath(genpath(['Code' filesep 'osortTextUI']));
 
 
 rawPath = 'raw';

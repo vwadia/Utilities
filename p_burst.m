@@ -33,7 +33,7 @@ MaxXS= 10;%Max Xtra Spikes %10
 MinSPInBurst= 2; %5;%Minimum spkes in a Burst %2
 %Anchor=50;%Anchor Time
 Anchor = 25; % decreasing this increases SI
-Signif = 0.05;
+Signif = 0.001;
 UserSI=-log(Signif);
 %UserSI = 10;
 Tol=1e-300;
@@ -103,7 +103,7 @@ Temp=0;Done=0;
 %******************Output Arguments*********************
 BOB=[];EOB=[];SOB=[];%MUST be set to EMPTY
 if FspAB == MaxSpikes,
-    disp('Something wrong with the spktrain, unable to process');
+%     disp('Something wrong with the spktrain, unable to process');
     return
 end
 %########################################################
