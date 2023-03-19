@@ -33,6 +33,7 @@ MaxXS= 10;%Max Xtra Spikes %10
 MinSPInBurst= 2; %5;%Minimum spkes in a Burst %2
 % Anchor=50;%Anchor Time
 Anchor = 25; % decreasing this increases SI
+% Signif = 2.5000e-05;
 Signif = 0.001;
 UserSI=-log(Signif);
 %UserSI = 10;

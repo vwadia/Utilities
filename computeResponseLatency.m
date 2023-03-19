@@ -78,7 +78,7 @@ else % multiple categories
     for ng = 1:length(unique(labels))
         
         % ALSO NOTE - using the smoothed psth because it's cleaner to measure threshold crossings
-        testPsth{ng, 1} = psth{1, 2}(find(labels == ng), abs(timelimits(1))*1e3+offset:end);
+        testPsth{ng, 1} = psth{1, 2}(find(labels == ng), abs(timelimits(1))*1e3+offset:abs(timelimits(1))*1e3+offset+ceil(stimDur)); % used to be 'end' March2023
         
     end
     
@@ -118,7 +118,7 @@ else % multiple categories
 %                 [max_gr, max_val] = Utilities.findMaxGroup(psth{1, 2}(:, abs(timelimits(1))*1e3+offset:abs(timelimits(1))*1e3+offset+ceil(stimDur)), labels);
                 
             elseif method == 2 % omega squared
-                % comparison type = 2 --> comparison of groups post stimON
+                % comparison type = 3 --> compute omega squared across time 
                 multMatrix = Utilities.slidingWindowANOVA(psth{1, 1}, labels, abs(timelimits)*1e3+offset, alpha, 0, [], binSize, stepsize, 3);
                 if ~isempty(multMatrix)
                     [mv, mt] = max(cell2mat(multMatrix(:, 3)));

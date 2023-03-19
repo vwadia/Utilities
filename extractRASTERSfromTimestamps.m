@@ -2,6 +2,8 @@
 
 function [D,D1]=extractRASTERSfromTimestamps(timeStampArrayOUTnownow,ttltimes,timelimits,Binsize)
 
+
+
 % conversion to ms happens here
 D1(round((timelimits(2)-timelimits(1))*1000+2),length(ttltimes))=0; % matrix of 0s this large
 D(round((timelimits(2)-timelimits(1))*1000+2),length(ttltimes))=0;
@@ -35,4 +37,4 @@ end
 D(1:round(Binsize/2),:)=0;
 
 % last binsize/2 rows (timestamps)
-D((timelimits(2)-timelimits(1))*1000-round(Binsize/2):(timelimits(2)-timelimits(1))*1000+2,:)=0;
+D(floor((timelimits(2)-timelimits(1))*1000-round(Binsize/2)):floor((timelimits(2)-timelimits(1))*1000+2),:)=0;
