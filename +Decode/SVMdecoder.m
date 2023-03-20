@@ -9,14 +9,14 @@ negLoss = [];
 % CVMdl   = fitclinear(X, Y, 'ObservationsIn', 'rows', 'KFold', 10, 'Learner', 'svm'); %,'Prior','uniform','Learners',t);
 % [predictions,pscore] = kfoldPredict(CVMdl);
 
-% Using classwise pairwise decoding - when you have multiple groups this is
-% better ------------------------------------------------------------
+% Using classwise pairwise decoding - when you have multiple groups this is better 
+%  ------------------------------------------------------------
 t    = templateSVM('Standardize',false,'KernelFunction','linear');
 Mdl   = fitcecoc(X,Y,'Prior','uniform','Learners',t);
-tic
-% CVMdl = crossval(Mdl,'Kfold',10);
-CVMdl = crossval(Mdl,'Leaveout', 'on');
-toc
+% tic
+CVMdl = crossval(Mdl,'Kfold',length(unique(Y)));
+% CVMdl = crossval(Mdl,'Leaveout', 'on');
+% toc
 [predictions,negLoss,pscore] = kfoldPredict(CVMdl); % gets produced by fitecoc
 groundtruth = Y;
 

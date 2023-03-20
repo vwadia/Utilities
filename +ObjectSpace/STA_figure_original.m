@@ -42,6 +42,8 @@ if isfield(options,'unfam')
     unfam = options.unfam;
     unfam_stim_ind = options.unfam_stim_ind;
     unfam_para_ind = options.unfam_para_ind;
+else
+    unfam = false;
 end
 
 if unfam
