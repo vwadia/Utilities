@@ -13,7 +13,9 @@ if strcmp(params.cellArea(2:end), 'FFA')
     elseif strcmp(params.cells, 'respCells')
         load([params.diskPath filesep 'Recall_Task' filesep 'AllRespITCells_500stim_Im.mat']);
     elseif strcmp(params.cells, 'sigRamp')
-        load([params.diskPath filesep 'Recall_Task' filesep 'AllITCells_500Stim_Im_SigRamp.mat']);
+        load([params.diskPath filesep 'Recall_Task' filesep 'ReactiveITCells_alpha0.05_500Stim_Im_SigRamp.mat']);
+%         load([params.diskPath filesep 'Recall_Task' filesep 'AllITCells_500Stim_Im_SigRamp.mat']);
+%         load([params.diskPath filesep 'Recall_Task' filesep 'old_cellStructs' filesep 'AllITCells_500Stim_Im_SigRamp.mat']);
     end
 else
     
@@ -190,7 +192,17 @@ for idx = 1:length(dfLP)
     data_lfp = cat(2, data_lfp, dfLP_ofChan);
 end
 
-
+% sort if screening
+if strcmp(condition, 'Screening')
+    taskStruct = load([params.diskPath filesep params.sessDir filesep sessDir{5}]);
+    order = taskStruct.order(:);
+    if strcmp(sessDir{1}, 'Recall_Task\P76CS\ReScreenRecall_Session_1_20210917')
+        order = order(1:1892);
+    end
+    [sortedOrder, correctOrder] = sortrows(order);
+    data_lfp = data_lfp(:, :, correctOrder);
+    data_lfp = data_lfp(:, :, 1:size(data_spike, 3));
+end
 
 %% boom done
 end

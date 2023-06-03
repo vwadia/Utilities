@@ -71,23 +71,29 @@ end
 value_sta_prj = (sta/norm(sta))*para'; 
 
 if fam
+    % NOTE: normalize with amp-dim of stim images
     para_fam = params(fam_para_ind,:);
-%     amp_dim = sqrt(sum(para_fam.^2));
-    if strcmp(options.screenType, 'Object')
-        para_fam = param_normalize_per_dim(para_fam, amp_dim, length(options.fam_stim_ind));
-    elseif strcmp(options.screenType, 'Face')       
-        para_fam = param_normalize(para_fam, amp_dim, ndim1);
+    % if not normalized already - then normalize now
+    if ~options.famNorm
+        if strcmp(options.screenType, 'Object')
+            para_fam = param_normalize_per_dim(para_fam, amp_dim, length(options.fam_stim_ind));
+        elseif strcmp(options.screenType, 'Face')
+            para_fam = param_normalize(para_fam, amp_dim, ndim1);
+        end
     end
     value_sta_prj_fam = (sta/norm(sta))*para_fam';
 end
 
 if unfam
+    % NOTE: normalize with amp-dim of stim images    
     para_unfam = params(unfam_para_ind,:);
-%     amp_dim = sqrt(sum(para_unfam.^2));
-    if strcmp(options.screenType, 'Object')
-        para_unfam = param_normalize_per_dim(para_unfam, amp_dim, length(options.unfam_stim_ind));
-    elseif strcmp(options.screenType, 'Face')
-        para_unfam = param_normalize(para_unfam, amp_dim, ndim1);
+    % if not normalized already - then normalize now    
+    if ~options.unfamNorm
+        if strcmp(options.screenType, 'Object')
+            para_unfam = param_normalize_per_dim(para_unfam, amp_dim, length(options.unfam_stim_ind));
+        elseif strcmp(options.screenType, 'Face')
+            para_unfam = param_normalize(para_unfam, amp_dim, ndim1);
+        end
     end
     value_sta_prj_unfam = (sta/norm(sta))*para_unfam';
 end
@@ -121,18 +127,17 @@ else
 end
 h1 = subplot(3, 3, [2 3]);
 errorbar(nonlin.x, nonlin.y, nonlin.e, 'k');
-% xlim([-x_lim x_lim])
-yl_sta = ylim;
-% xlabel('STA axis')
-% ylabel('mean firing rate')
-
-
 
 if fam
     hold on
     scatter(value_sta_prj_fam, fr_fam, 'filled', 'o', ...
         'LineWidth', 1.5, 'MarkerEdgeColor', [1 1 0], 'MarkerFaceColor', 'k') % [0.9 0.7 0]
 end
+
+% xlim([-x_lim x_lim])
+yl_sta = ylim;
+% xlabel('STA axis')
+% ylabel('mean firing rate')
 
 %% sta projection significance
 
@@ -224,10 +229,10 @@ end
 if isfield(options, 'pot_rec_stim')
     
     hold on
-    for i = 1:length(options.pot_rec_stim)
+    for i = 1:size(options.pot_rec_stim, 1)
         pot_stim_pos(i, 1) = find(x == options.pot_rec_stim(i, 1));
     end
-    for i = 1:length(options.pot_rec_stim)
+    for i = 1:size(options.pot_rec_stim, 1)
         pot_stim_pos(i, 2) = find(y == options.pot_rec_stim(i, 2));
     end
     assert(isequal(pot_stim_pos(:, 1), pot_stim_pos(:, 2)))
@@ -269,10 +274,11 @@ box on
 % ylabel('Principal Orthogonal axis')
 % axis equal
 x_lim = max(abs(xlim));
-% y_lim = max(abs(ylim));
+y_lim = max(abs(ylim));
 % lim = max(x_lim, y_lim);
 xlim([-x_lim x_lim])
-ylim([-x_lim x_lim])
+ylim([-y_lim y_lim])
+
 yt_scat = yticks;
 xt_scat = xticks;
 
@@ -307,19 +313,19 @@ else
     nonlin = compute_binned_average(pc1, fr, nbin, 10);  
 end
 herrorbar(nonlin.y, nonlin.x, nonlin.e, 'k');
-% xlabel('Principal Orthogonal axis')
-% ylabel('mean firing rate')
-% ylim([-lim lim])
-yticks([yt_scat]);
-% xlim([-yl_sta(2)*0.5 yl_sta(2)*0.5])
-xlim([-yl_sta(2) yl_sta(2)])
-
 
 if unfam
     hold on
     scatter(fr_unfam, pc1_unfam, 'filled', 'o', ...
         'LineWidth', 1.5, 'MarkerEdgeColor', [0 1 0], 'MarkerFaceColor', 'k')
 end
+% xlabel('Principal Orthogonal axis')
+% ylabel('mean firing rate')
+% ylim([-lim lim])
+yticks([yt_scat]);
+% xlim([-yl_sta(2)*0.5 yl_sta(2)*0.5])
+xlim([-yl_sta(2) yl_sta(2)])
+% xlim([-12 12])
 
 % box off
 % if ~fam && ~unfam

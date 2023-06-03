@@ -40,6 +40,7 @@ if strcmp(cond, 'Screening')
     % spike data
     spikDat.timelimits = [-0.17 0.53];
     spikDat.offset = 100;
+%     spikDat.offset = 50;
 
     % lfp data
     switch [diskPath filesep params.sessDir]
@@ -58,6 +59,12 @@ if strcmp(cond, 'Screening')
         case [diskPath filesep 'Recall_Task' filesep 'P80CS' filesep 'ReScreenRecall_Session_1_20220728']
             events = events(expON(end):expOFF(end), :); % screening
         case [diskPath filesep 'Recall_Task' filesep 'P80CS' filesep 'ReScreenRecall_Session_2_20220731']
+            events = events(expON(end):expOFF(end), :); % screening
+        case [diskPath filesep 'Recall_Task' filesep 'P84CS' filesep 'ReScreenRecall_Session_1_20230406']
+            events = events(expON(end):expOFF(end), :); % screening        
+        case [diskPath filesep 'Recall_Task' filesep 'P84CS' filesep 'ReScreenRecall_Session_2_20230408']
+            events = events(expON(end):expOFF(end), :); % screening
+        case [diskPath filesep 'Recall_Task' filesep 'P85CS' filesep 'ReScreenRecall_Session_1_20230424']
             events = events(expON(end):expOFF(end), :); % screening
     end
 
@@ -81,7 +88,7 @@ elseif strcmp(cond, 'Encoding')
     
     % spike data
     spikDat.timelimits = [-0.5 2.5];
-    spikDat.offset = 500; % how much of baseline period to grab 
+    spikDat.offset = 250; % how much of baseline period to grab 
 
     switch [diskPath filesep params.sessDir]
         case [diskPath filesep 'Recall_Task' filesep 'P76CS' filesep 'ReScreenRecall_Session_1_20210917']
@@ -102,6 +109,13 @@ elseif strcmp(cond, 'Encoding')
             events = events(find(events(:, 2) == TRAINING_RECALL_END):expOFF(1), :); % recall task
         case [diskPath filesep 'Recall_Task' filesep 'P80CS' filesep 'ReScreenRecall_Session_2_20220731']
             events = events(find(events(:, 2) == TRAINING_RECALL_END):expOFF(1), :); % recall task
+        case [diskPath filesep 'Recall_Task' filesep 'P84CS' filesep 'ReScreenRecall_Session_1_20230406']
+            events = events(find(events(:, 2) == TRAINING_RECALL_END):expOFF(1), :); % recall task
+        case [diskPath filesep 'Recall_Task' filesep 'P84CS' filesep 'ReScreenRecall_Session_2_20230408']
+            events = events(find(events(:, 2) == TRAINING_RECALL_END):expOFF(1), :); % recall task
+        case [diskPath filesep 'Recall_Task' filesep 'P85CS' filesep 'ReScreenRecall_Session_1_20230424']
+            trnEnd = find(events(:, 2) == TRAINING_RECALL_END);
+            events = events(trnEnd(end):expOFF(1), :); % recall task
     end
     
 
@@ -112,8 +126,8 @@ elseif strcmp(cond, 'Encoding')
     lfDat.timeFrom = periods(:, 1);
     lfDat.timeTo = periods(:, 2);
     lfDat.bin_size = 200;
-    lfDat.Ord = 1:length(lfDat.timeFrom);
-    lfDat.use_both_offsets = 1;
+    lfDat.Ord = 1:length(lfDat.timeFrom); 
+    lfDat.use_both_offsets = 1; 
 
     lfDat.offset = [1000 1500]; % is this correct?
 
@@ -143,6 +157,13 @@ elseif strcmp(cond, 'Imagination')
             events = events(find(events(:, 2) == TRAINING_RECALL_END):expOFF(1), :); % recall task
         case [diskPath filesep 'Recall_Task' filesep 'P80CS' filesep 'ReScreenRecall_Session_2_20220731']
             events = events(find(events(:, 2) == TRAINING_RECALL_END):expOFF(1), :); % recall task
+        case [diskPath filesep 'Recall_Task' filesep 'P84CS' filesep 'ReScreenRecall_Session_1_20230406']
+            events = events(find(events(:, 2) == TRAINING_RECALL_END):expOFF(1), :); % recall task
+        case [diskPath filesep 'Recall_Task' filesep 'P84CS' filesep 'ReScreenRecall_Session_2_20230408']
+            events = events(find(events(:, 2) == TRAINING_RECALL_END):expOFF(1), :); % recall task
+        case [diskPath filesep 'Recall_Task' filesep 'P85CS' filesep 'ReScreenRecall_Session_1_20230424']
+            trnEnd = find(events(:, 2) == TRAINING_RECALL_END);
+            events = events(trnEnd(end):expOFF(1), :); % recall task
     end
 
     lfDat.eventsMS = events*1e3;

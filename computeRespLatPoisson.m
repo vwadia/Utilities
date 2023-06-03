@@ -59,7 +59,7 @@ for it = 1:size(exCell, 1)
     times = find(exCell(it, :) == 1);
     
     % note start time can't be 0
-    startT = -timelimits(1)*1e3+50;
+    startT = -timelimits(1)*1e3+50; % Starting at an offset to avoid spurious early values 
     endT = (-timelimits(1)*1e3)+stimDur;
 
 %     can manually input an average spike rate - per trial works best so far
@@ -101,45 +101,45 @@ if isnan(rL)
 end
 
 %% step 3 - thresholding the max group after RLcomp
-% exCell = psth{1, 2}; % smoothed psth is better for threshold crossing
-% 
-% m_b_psth(1, 1) = mean(mean(exCell(:, -timelimits(1)*1e3-50:-timelimits(1)*1e3)));
-% m_b_psth(1, 2) = std(mean(exCell(:, -timelimits(1)*1e3-50:-timelimits(1)*1e3)));
-% 
-% ctr = 1;
-% m_t_psth = [];
-% for lb = unique(labels)'
-%     m_b_psth(ctr, 1) = mean(mean(exCell(find(labels == lb), -timelimits(1)*1e3-50:-timelimits(1)*1e3)));
-%     m_b_psth(ctr, 2) = std(mean(exCell(find(labels == lb), -timelimits(1)*1e3-50:-timelimits(1)*1e3)));
-%     
-%     if -timelimits(1)*1e3+rL+ceil(stimDur) > size(exCell, 2)
-%         t_psth = exCell(find(labels == lb), -timelimits(1)*1e3+floor(rL):end);
-%     else
-%         t_psth = exCell(find(labels == lb), -timelimits(1)*1e3+floor(rL):-timelimits(1)*1e3+floor(rL)+ceil(stimDur));
-%     end
-%     
-%     
-%     m_t_psth(ctr, :) = mean(t_psth, 1);
-%     
-%     
-%     ctr = ctr + 1;
-% end
-% 
-% if -timelimits(1)*1e3+rL+ceil(stimDur) > size(exCell, 2)
-%     full_t_psth = exCell(:, -timelimits(1)*1e3+floor(rL):end);
-% else
-%     full_t_psth = exCell(:, -timelimits(1)*1e3+floor(rL):-timelimits(1)*1e3+floor(rL)+ceil(stimDur));
-% end
-% 
-% % find max group
-% [max_gr, max_val] = Utilities.findMaxGroup(full_t_psth, labels); % find pos group
-% [min_gr, min_val] = Utilities.findMaxGroup(full_t_psth, labels, true); % find neg group
-% 
-% % threshold 
-% if ~(max_val > (m_b_psth(max_gr, 1) + num_std_dvs*m_b_psth(max_gr, 2)))...
-%         &&  ~(min_val < (m_b_psth(min_gr, 1) - num_std_dvs*m_b_psth(min_gr, 2)))...       
-%     nonResp = true;
-% end
+exCell = psth{1, 2}; % smoothed psth is better for threshold crossing
+
+m_b_psth(1, 1) = mean(mean(exCell(:, -timelimits(1)*1e3-50:-timelimits(1)*1e3)));
+m_b_psth(1, 2) = std(mean(exCell(:, -timelimits(1)*1e3-50:-timelimits(1)*1e3)));
+
+ctr = 1;
+m_t_psth = [];
+for lb = unique(labels)'
+    m_b_psth(ctr, 1) = mean(mean(exCell(find(labels == lb), -timelimits(1)*1e3-50:-timelimits(1)*1e3)));
+    m_b_psth(ctr, 2) = std(mean(exCell(find(labels == lb), -timelimits(1)*1e3-50:-timelimits(1)*1e3)));
+    
+    if -timelimits(1)*1e3+rL+ceil(stimDur) > size(exCell, 2)
+        t_psth = exCell(find(labels == lb), -timelimits(1)*1e3+floor(rL):end);
+    else
+        t_psth = exCell(find(labels == lb), -timelimits(1)*1e3+floor(rL):-timelimits(1)*1e3+floor(rL)+ceil(stimDur));
+    end
+    
+    
+    m_t_psth(ctr, :) = mean(t_psth, 1);
+    
+    
+    ctr = ctr + 1;
+end
+
+if -timelimits(1)*1e3+rL+ceil(stimDur) > size(exCell, 2)
+    full_t_psth = exCell(:, -timelimits(1)*1e3+floor(rL):end);
+else
+    full_t_psth = exCell(:, -timelimits(1)*1e3+floor(rL):-timelimits(1)*1e3+floor(rL)+ceil(stimDur));
+end
+
+% find max group
+[max_gr, max_val] = Utilities.findMaxGroup(full_t_psth, labels); % find pos group
+[min_gr, min_val] = Utilities.findMaxGroup(full_t_psth, labels, true); % find neg group
+
+% threshold 
+if ~(max_val > (m_b_psth(max_gr, 1) + num_std_dvs*m_b_psth(max_gr, 2)))...
+        &&  ~(min_val < (m_b_psth(min_gr, 1) - num_std_dvs*m_b_psth(min_gr, 2)))...       
+    nonResp = true;
+end
 
 %% step 2 - Make sure avg FR is greater than 0.5Hz 
 

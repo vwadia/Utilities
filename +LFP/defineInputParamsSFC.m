@@ -32,7 +32,7 @@ params = struct;
 [params, lfpArea]       = Utilities.get_opt(params, 'lfpArea', lfpArea); % for example
 [params, valid_lfpChans]      = Utilities.get_opt(params, 'lfpChans', valid_lfpChans);
 [params,run_boot]       = Utilities.get_opt(params,'run_boot','true'); % surrogate distribution for sfc
-[params,cutOffSpikeVal]       = Utilities.get_opt(params,'cutOffSpikeVal', 50); % change to 0 if not needed 
+[params,cutOffSpikeVal]       = Utilities.get_opt(params,'cutOffSpikeVal', 0); % change to 0 if not needed 
 [params, balance_spikes] = Utilities.get_opt(params,'balance_spikes','true'); % surrogate distribution for sfc
 
 % maybe something like this is good?

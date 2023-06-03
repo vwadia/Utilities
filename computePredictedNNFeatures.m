@@ -4,7 +4,7 @@ function [pred_feat, obs_feat] = computePredictedNNFeatures(feat, fir, all_inds,
 % features is reversed.
 % INPUTS:
 %     1. feat a 1 x ndim vector of features to a given image
-%     2. fir - the responses matrix (nimg x ndim)
+%     2. fir - the responses matrix (nimg x ncells)
 %     3. Indices of images
 %     4. method to compute sta axis
 % 

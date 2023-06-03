@@ -20,7 +20,7 @@ xlsFile = [boxPath filesep 'for_Advisors_VarunThesis' filesep 'IT_ImaginationPap
 meshAlpha = 0.5;
 roiAlpha = 0;
 
-saveFigs = 0;
+saveFigs = true;
 
 %%
 
@@ -45,10 +45,12 @@ load([fTripPath filesep 'template' filesep 'anatomy' filesep 'surface_pial_both.
 
 
 f = figure;
-% ft_plot_mesh(mesh, 'facecolor', ([255,224,189]-100)./255, 'edgecolor', 'none','facealpha',0.1);
-% ft_plot_mesh(mesh, 'facecolor', ([192,192,192])./255, 'edgecolor', ([192,192,192])./255, 'facealpha',0.1, 'edgealpha', 0.1);
-% ft_plot_mesh(mesh, 'facecolor', ([192,192,192])./255, 'edgecolor', 'none', 'facealpha',0.1);
-ft_plot_mesh(mesh, 'facecolor', ([192,192,192])./255, 'edgecolor', 'none', 'facealpha',meshAlpha);
+% ft_plot_mesh(mesh, 'facecolor', ([255,224,189]-100)./255, 'edgecolor', 'none','facealpha',0.1); % Mar uses this - it's brown
+% ft_plot_mesh(mesh, 'facecolor', ([192,192,192])./255, 'edgecolor', ([192,192,192])./255, 'facealpha',0.1, 'edgealpha', 0.1); % not this 0 coloring the edges makes the inside hard to see
+
+% FOR ME --------------------------------------------
+ft_plot_mesh(mesh, 'facecolor', ([192,192,192])./255, 'edgecolor', 'none', 'facealpha',0.1); % use this for zoomed out glass brain view
+% ft_plot_mesh(mesh, 'facecolor', ([192,192,192])./255, 'edgecolor', 'none', 'facealpha',meshAlpha); % for zoomed in view
 
 
 hold on;
@@ -165,8 +167,8 @@ mesh_rha = ft_prepare_mesh(cfg, seg);
 
 hold on
 
-ft_plot_mesh(mesh_rha, 'facecolor', colorIT, 'edgecolor', 'none','facealpha',roiAlpha);
-% ft_plot_mesh(mesh_rha, 'facecolor', colorIT, 'edgecolor', [0 0 0],'facealpha',roiAlpha, 'edgealpha', 0.1); % the outline mesh is 3D so really not helpful - obscures electrode points
+% ft_plot_mesh(mesh_rha, 'facecolor', colorIT, 'edgecolor', 'none','facealpha',roiAlpha);
+ft_plot_mesh(mesh_rha, 'facecolor', colorIT, 'edgecolor', colorIT,'facealpha',roiAlpha, 'edgealpha', 0.1); % the outline mesh is 3D so really not helpful - obscures electrode points
 
 % view(130,-3);%for occi
 % lighting gouraud; 
@@ -209,9 +211,9 @@ cfg.smooth      = 3;
 mesh_rha = ft_prepare_mesh(cfg, seg);
 
 hold on
-
-ft_plot_mesh(mesh_rha, 'facecolor', colorIT, 'edgecolor', 'none','facealpha',roiAlpha);
-% ft_plot_mesh(mesh_rha, 'facecolor', colorIT, 'edgecolor', colorIT,'facealpha',roiAlpha, 'edgealpha', 0.1);  % the outline mesh is 3D so really not helpful - obscures electrode points
+% 
+% ft_plot_mesh(mesh_rha, 'facecolor', colorIT, 'edgecolor', 'none','facealpha',roiAlpha);
+ft_plot_mesh(mesh_rha, 'facecolor', colorIT, 'edgecolor', colorIT,'facealpha',roiAlpha, 'edgealpha', 0.1);  % the outline mesh is 3D so really not helpful - obscures electrode points
 
 % view(130,-3);%for occi
 % lighting gouraud; 
