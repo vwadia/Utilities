@@ -116,38 +116,19 @@ end
 cc = corr(value_sta_prj',fr); % 
 p = sum(cc_rand > cc)/length(cc_rand);
 
-
-%% firing rate along STA
-
-nbin = 8; 
-if exist('n_fr')
-    nonlin = compute_binned_average(value_sta_prj, n_fr, nbin, 10); % changed to n_fr by Varun sometimes    
-else
-    nonlin = compute_binned_average(value_sta_prj, fr, nbin, 10); % changed to n_fr by Varun sometimes
-end
-h1 = subplot(3, 3, [2 3]);
-errorbar(nonlin.x, nonlin.y, nonlin.e, 'k');
-
-if fam
-    hold on
-    scatter(value_sta_prj_fam, fr_fam, 'filled', 'o', ...
-        'LineWidth', 1.5, 'MarkerEdgeColor', [1 1 0], 'MarkerFaceColor', 'k') % [0.9 0.7 0]
-end
-
-% xlim([-x_lim x_lim])
-yl_sta = ylim;
-% xlabel('STA axis')
-% ylabel('mean firing rate')
-
 %% sta projection significance
 
-subplot(3, 3, 1)
+h4 = subplot(3, 3, 1);
 h = histogram(cc_rand,0:0.01:1);
 h.FaceColor = [1 1 1 ];
 hold on;
 plot([cc cc],[0 50], 'LineWidth', 2, 'Color', 'r');
-text(.5, 100, num2str(p,'p = %.3f'))
+text(.5, 100, num2str(p,'p = %.3f'), 'FontWeight', 'bold')
 % text(.5, 100, ['p = ' num2str(p)]); 
+
+
+
+
 
 %% scatter plot STA vs max orth STA
 para_sub_sta = zeros(size(para));
@@ -171,7 +152,21 @@ if fam
 end
 
 if unfam
-    pc1_unfam = para_unfam * COEFF(:,1);
+%     pc1_unfam = para_unfam * COEFF(:,1);
+%     mlenid = 1;
+%     keyboard
+    % testing multiple orthogonal axes
+    for ii = 1:size(COEFF, 2)
+        test_pc_unfam{ii, 1} = para_unfam * COEFF(:,ii); % choose from here
+    end
+    maxlen = cellfun(@(x) vecnorm(x), test_pc_unfam, 'UniformOutput', false);
+    [mlen, mlenid] = max(cell2mat(maxlen));
+    disp(mlenid)
+    % reset others
+    pc1_unfam = para_unfam * COEFF(:,mlenid);
+    pc1 = para_sub_sta * COEFF(:,mlenid);
+    pc1_fam = para_fam * COEFF(:,mlenid);
+
 end
 
 if fam && unfam
@@ -256,6 +251,18 @@ if isfield(options, 'recalled_stim')
     ay = y(es_val);
     options.xvals = ax;
     options.yvals = ay;
+    
+    if options.matchColsToRecall 
+        if strcmpi(options.axToUse, 'sta')
+            [~, t1] = sort(ax);
+            ax = ax(t1);
+            ay = ay(t1);
+        elseif strcmpi(options.axToUse, 'ortho')
+            [~, t1] = sort(ay);
+            ax = ax(t1);
+            ay = ay(t1);
+        end
+    end
 %     hold on
 %     ax = x(options.recalled_stim);
 %     ay = y(options.recalled_stim);
@@ -275,13 +282,58 @@ box on
 % axis equal
 x_lim = max(abs(xlim));
 y_lim = max(abs(ylim));
-% lim = max(x_lim, y_lim);
 xlim([-x_lim x_lim])
 ylim([-y_lim y_lim])
 
-yt_scat = yticks;
-xt_scat = xticks;
+% set xticks chosen above
+% xticks(n_xtiks);
 
+% fix x ticklabels -------------------------------------------------------
+xlim([-max(abs(xticks)) max(abs(xticks))])
+xtiks = xticks;
+% because of precision issue from axis limit change need to query labels 
+xt_i = find(cell2mat(cellfun(@(x) strcmp(x, '0'), xticklabels, 'UniformOutput', false))); 
+lxt_i = length(xtiks);
+pxt = length(xtiks(xt_i+1:end));
+nxt = length(xtiks(1:xt_i-1));
+if pxt >= nxt
+    tnum = ceil(pxt/2);
+elseif nxt > pxt
+    tnum = ceil(nxt/2);
+end
+n_xtiks = xtiks([xt_i-tnum, xt_i, xt_i+tnum]);
+xticks(n_xtiks);
+
+
+% fix  y ticklabels-----------
+ylim([-max(abs(yticks)) max(abs(yticks))])
+ytiks = yticks;
+% because of precision issue from axis limit change need to query labels 
+yt_i = find(cell2mat(cellfun(@(x) strcmp(x, '0'), yticklabels, 'UniformOutput', false))); 
+lyt_i = length(ytiks);
+pyt = length(ytiks(yt_i+1:end));
+nyt = length(ytiks(1:yt_i-1));
+if pyt >= nyt
+    tnum = ceil(pyt/2);
+elseif nyt > pyt
+    tnum = ceil(nyt/2);
+end
+n_ytiks = ytiks([yt_i-tnum, yt_i, yt_i+tnum]);
+yticks(n_ytiks);
+
+% set up colorbar -------------------------------------------------
+purmap(:, 1) = linspace(c(1, 1), c(end, 1), length(c));
+purmap(:, 2) = zeros(length(c), 1);
+purmap(:, 3) = linspace(c(1, 3), c(end, 3), length(c));
+
+
+colormap(purmap) % set colormap
+cb = colorbar;
+cb.Ticks = ([]);
+cb.FontWeight = 'bold';
+cb.Position = [0.934166666666667,0.139047619047619,0.025595238095239,0.204761904761913];
+cb.Title.String='Max'; % top
+set(cb.XLabel,{'String','Rotation','Position'},{'0',0,[0.5 -0.01]}) % bottom
 
 if fam
     hold on
@@ -303,6 +355,61 @@ if unfam
         'filled', 'o', 'MarkerEdgeColor', [0 1 0], 'LineWidth', 1.5);
 end
 
+%% shuffled control for ortho - for paper figs
+% n_repeats = 1000;
+% cc_rand_ortho = zeros(n_repeats,1);
+% ortho_shuffle = zeros(n_repeats,nstim);
+% 
+% for i=1:n_repeats
+%     
+% %     para_shuffle = para(randsample(nstim, nstim),:);
+% %     ortho_shuffle(i,:) = pc1(randsample(nstim, nstim));
+%     
+%     value_ortho_shuffle = pc1(randsample(nstim, nstim));
+%     cc_rand_ortho(i) = corr(value_ortho_shuffle,fr);
+%     %mag=max(abs(gen2));
+% end
+% 
+% cc_o = corr(pc1,fr); % 
+% p = sum(cc_rand_ortho > cc_o)/length(cc_rand_ortho);
+% 
+%% ortho projection significance
+% 
+% h4 = subplot(3, 3, 1);
+% h = histogram(cc_rand_ortho,-0.25:0.01:1);
+% h.FaceColor = [1 1 1 ];
+% hold on;
+% plot([cc_o cc_o],[0 50], 'LineWidth', 2, 'Color', 'r');
+% text(.5, 80, num2str(p,'p = %.3f'), 'FontWeight', 'bold')
+% % text(.5, 100, ['p = ' num2str(p)]); 
+
+%% firing rate along STA
+
+nbin = 8; 
+if exist('n_fr')
+    nonlin = compute_binned_average(value_sta_prj, n_fr, nbin, 10); % changed to n_fr by Varun sometimes    
+else
+    nonlin = compute_binned_average(value_sta_prj, fr, nbin, 10); % changed to n_fr by Varun sometimes
+end
+h1 = subplot(3, 3, [2 3]);
+errorbar(nonlin.x, nonlin.y, nonlin.e, 'k');
+
+xticks(n_xtiks); % save ticks
+
+
+
+if fam
+    hold on
+    scatter(value_sta_prj_fam, fr_fam, 'filled', 'o', ...
+        'LineWidth', 1.5, 'MarkerEdgeColor', [1 1 0], 'MarkerFaceColor', 'k') % [0.9 0.7 0]
+end
+
+% xlim([-x_lim x_lim])
+yl_sta = ylim;
+% xlabel('STA axis')
+% ylabel('mean firing rate')
+
+
 %% firing rate along principal orthogonal dimension
 
 h3 = subplot(3, 3, [4 7]);
@@ -319,13 +426,25 @@ if unfam
     scatter(fr_unfam, pc1_unfam, 'filled', 'o', ...
         'LineWidth', 1.5, 'MarkerEdgeColor', [0 1 0], 'MarkerFaceColor', 'k')
 end
+
+
 % xlabel('Principal Orthogonal axis')
 % ylabel('mean firing rate')
 % ylim([-lim lim])
-yticks([yt_scat]);
+yticks(n_ytiks);
 % xlim([-yl_sta(2)*0.5 yl_sta(2)*0.5])
 xlim([-yl_sta(2) yl_sta(2)])
 % xlim([-12 12])
+
+if isfield(options, 'noTicks') && options.noTicks
+    set(h1, 'xticklabel', []) % Fr subplot
+    set(h2, 'xticklabel', []) % scatter
+    set(h2, 'yticklabel', []) % scatter
+    set(h3, 'yticklabel', []) % Ortho subplot
+    set(h4, 'yticklabel', []) % shuffle dist
+    set(h4, 'xticklabel', []) % shuffle dist
+end
+
 
 % box off
 % if ~fam && ~unfam

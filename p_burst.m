@@ -30,11 +30,12 @@ end
 
 MaxXT = 10;%Max Xtra Time
 MaxXS= 10;%Max Xtra Spikes %10
-MinSPInBurst= 2; %5;%Minimum spkes in a Burst %2
+MinSPInBurst= 4; %5;%Minimum spkes in a Burst %2
 % Anchor=50;%Anchor Time
-Anchor = 25; % decreasing this increases SI
+Anchor = 500; % decreasing this increases SI
 % Signif = 2.5000e-05;
-Signif = 0.001;
+Signif = 0.01;
+
 UserSI=-log(Signif);
 %UserSI = 10;
 Tol=1e-300;
@@ -62,8 +63,9 @@ if  exist('MU') ~= 1
             MU=(length(SPT)-1)/(max(SPT)-min(SPT));
         end
         %if there are no spikes in the spike train or
-        %n spikes in train is less than 4
-        if(MU==0 | length(SPT)<=4)
+        %n spikes in train is less than 4 - changed to minSPInBurst by
+        %vwadia 10/2023
+        if(MU==0 | length(SPT)<=MinSPInBurst)
             BOB=[];
             EOB=[];
             SOB=[];

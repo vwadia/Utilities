@@ -48,8 +48,10 @@ for cellIndex = 1:length(strctCells)%42:length(strctCells)%screeningData.visCell
     else
         globalyl = Utilities.Plotting.findingGlobalYLim(screeningData.psth{cellIndex, 2}, labels, orderToUse, 'Screening', totalTrials);
     end
+
     for figNum = 1:numFigsPerCell
         f(figNum) = figure('Visible', 'off');
+%         f(figNum) = figure;
         set(gcf,'Position',get(0,'Screensize')) % display fullsize on other screen
         %         clf reset
 %         if isfield(screeningData, 'catIDs') && ~isempty(screeningData.catIDs)
@@ -167,8 +169,9 @@ for cellIndex = 1:length(strctCells)%42:length(strctCells)%screeningData.visCell
                 if isfield(screeningData, 'lgnd') && ~isempty(screeningData.lgnd)
 %                     lgnd = legend(screeningData.lgnd(labels)); % sorting my magnitude if required
                     lgnd = legend(screeningData.lgnd(labels), 'FontWeight', 'bold'); % sorting my magnitude if required
-%                     lgnd = legend('\color{red} Faces', '\color{green} Text', '\color{black} Plants/Fruits', '\color{magenta} Animals', '\color{blue} Objects');
-%                    set(lgnd, 'Position', [0.9153,0.8273,0.0562,0.0893]);
+%                     lgnd = legend('\color{red} Faces', '\color{green} Text', '\color{black} Plants', '\color{magenta} Animals', '\color{blue} Objects');
+%                     lgnd = legend('\color{red} Faces', '\color{green} Text', '\color{black} Plants/Fruits', '\color{magenta} Animals', '\color[rgb]{1, 0.8276, 0} Objects', '\color{blue} Familiar Faces');
+                   set(lgnd, 'Position', [0.9153,0.8273,0.0562,0.0893]);
                     if strcmp(screeningData.subID, 'P73CS_FWFast')
                         set(lgnd, 'Position', [0.8907,0.6756,0.1077,0.2850]);
                     else
@@ -270,15 +273,15 @@ for cellIndex = 1:length(strctCells)%42:length(strctCells)%screeningData.visCell
         %         end
         %         keyboard;
     end
-    
+%     keyboard
     % saving all together after modification
     for i = 1:numFigsPerCell
         filename = [pathOut filesep strctCells(cellIndex).brainArea '_' num2str(strctCells(cellIndex).ChannelNumber) '_' num2str(strctCells(cellIndex).Name) '_' num2str(i)];
         if ~strcmp(class(filename), 'cell')
-            print(f(i),filename ,'-dpng','-r0')
+            print(f(i),filename ,'-dpng','-r300')
         else
             filename = [pathOut filesep strctCells(cellIndex).brainArea{1} '_' num2str(strctCells(cellIndex).ChannelNumber) '_' num2str(strctCells(cellIndex).Name) '_' num2str(i)];
-            print(f(i),filename ,'-dpng','-r0')
+            print(f(i),filename ,'-dpng','-r300')
         end
         
     end

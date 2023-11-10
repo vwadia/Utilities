@@ -1,18 +1,20 @@
-function handlesToFig = PlotPerCellAllStim_Im(enc_psth, CR_psth, EncodingOrder, CROrder, offsetEnc, offsetTones, stimuli, FR_psth, FROrder, offsetFR)
+function handlesToFig = PlotPerCellAllStim_Im(plotOptions, enc_psth, CR_psth, EncodingOrder, CROrder, offsetEnc, offsetTones, stimuli, stimONCR, FR_psth, FROrder, offsetFR)
 % This is a functionized version of recall_plotPerCellAllStim
 % Just for ease of plotting and use with other functions
 % - or to plot reactivated cell across sessions without the need for 'RecallData' struct
 % INPUTS:
-%     1. enc_psth - 1x3 cell array of encoding raster, psth and times
-%     2. CR_psth - 1x3 cell array of CR raster, psth and times
-%     3. EncOrder - Order of images
-%     4. CROrder - Order of images were imagined in
-%     5. offsetEnc - offset used to make enc_psth
-%     6. offsetTones - offset used to make CR_psth
-%     7. stimuli - names of stimuli used (for legend)
-%     8. FR_psth - 1x3 cell array of free recall raster, psth, and times
-%     9. FROrder - normally RecallData.order_perCellAllStimFR
-%     10. offsetFR - offset used to make FR_psth
+%     1. plotOptions - struct with misc plotting options
+%     2. enc_psth - 1x3 cell array of encoding raster, psth and times
+%     3. CR_psth - 1x3 cell array of CR raster, psth and times
+%     4. EncOrder - Order of images
+%     5. CROrder - Order of images were imagined in
+%     6. offsetEnc - offset used to make enc_psth
+%     7. offsetTones - offset used to make CR_psth
+%     8. stimuli - names of stimuli used (for legend)
+%     9. StimOnCR - How long was Im period?
+%     10. FR_psth - 1x3 cell array of free recall raster, psth, and times
+%     11. FROrder - normally RecallData.order_perCellAllStimFR
+%     12. offsetFR - offset used to make FR_psth
 %
 % OUTPUTS:
 %     1. Handles to figure
@@ -20,13 +22,14 @@ function handlesToFig = PlotPerCellAllStim_Im(enc_psth, CR_psth, EncodingOrder, 
 % vwadiaMay2023
 
 % setting up viewing parameters
-MarkerSize = 4;
-Fontsize = 16;
-LineWidth = 3;
+MarkerSize = plotOptions.MarkerSize;
+Fontsize = plotOptions.Fontsize;
+LineWidth = plotOptions.LineWidth;
 
-
-
-if nargin == 7
+nonLink = false;
+if nargin == 8
+    stimONCR = 5000; FR_psth = []; FROrder = []; offsetFR = []; noFR = true;
+elseif nargin == 9
     FR_psth = []; FROrder = []; offsetFR = []; noFR = true;
 else
     noFR = false;
@@ -38,19 +41,32 @@ else
     subPlotNum = 3; % change to 2 for only Enc and CR
 end
 
-colors = Utilities.distinguishable_colors(length(stimuli));
+if ~isfield(plotOptions, 'cols') %|| (size(plotOptions.cols, 1) ~= length(stimuli))
+    colors = Utilities.distinguishable_colors(length(stimuli));
+%     colors = linspecer(length(stimuli), 'qualitative'); % better
+%     colors = linspecer(length(stimuli), 'sequential'); % colors too close
+%     colors = colormap(brewermap(8, "Dark2"));
+
+else
+    colors = plotOptions.cols;
+end
 
 % 6 subplots - 1 pair for encoding, 1 for CR and 1 for FR
-handlesToFig = figure('Visible', 'off'); clf;
-% handlesToFig = figure; clf;
-set(gcf,'Position',get(0,'Screensize')) % display fullsize on other screen
+if plotOptions.visible
+    handlesToFig = figure; clf;
+else
+    handlesToFig = figure('Visible', 'off'); clf;
+end
 
+if plotOptions.fullscreen
+    set(gcf,'Position',get(0,'Screensize')) % display fullsize on other screen
+end
 
 if noFR
-    gyl = Utilities.Plotting.findingGlobalYLim(CR_psth{1, 2}(:, 1:6000), ...
+    gyl = Utilities.Plotting.findingGlobalYLim(CR_psth{1, 2}(:, 1:find(CR_psth{1, 3} == stimONCR)), ...
         unique(CROrder), CROrder, 'AIC');
 else
-    gyl = Utilities.Plotting.findingGlobalYLim([CR_psth{1, 2}(:, 1:6000); FR_psth{1, 2}(:, 1:6000)], ...
+    gyl = Utilities.Plotting.findingGlobalYLim([CR_psth{1, 2}(:, 1:find(CR_psth{1, 3} == stimONCR)); FR_psth{1, 2}(:, 1:find(CR_psth{1, 3} == stimONCR))], ...
         unique([CROrder; 10*FROrder]), [CROrder; 10*FROrder], 'AIC');
     
 end
@@ -65,6 +81,10 @@ end
 % set globaly yl
 if globalyl == 0
     globalyl = 1;
+end
+
+if plotOptions.NormPsthFR
+    globalyl = 3;
 end
 
 for spN = 1:subPlotNum
@@ -92,25 +112,64 @@ for spN = 1:subPlotNum
     
     imagesTOplot = unique(orderToUse);
     for p1 = l(imagesTOplot)
-        Utilities.stdshade5(psth{1, 2}(find(orderToUse == imagesTOplot(p1)), :), 0.1,...
+        toPlotPsth = psth{1, 2}(find(orderToUse == imagesTOplot(p1)), :);
+        if plotOptions.NormPsthFR
+            toPlotPsth = zscore(toPlotPsth, 0, 2);
+        end
+        Utilities.stdshade5(toPlotPsth, 0.1,...
             colors(mod(p1, length(imagesTOplot))+1, :), psth{1, 3}, 2);
     end
     
+    if plotOptions.binSpikes
+        % cutting # of ticklabels in half and scaling
+        ytiklabs = get(gca, 'yticklabels');
+        ytiklabs = cellfun(@(x) str2num(x)/plotOptions.binSize, ytiklabs, 'UniformOutput', false);
+        ytiklabs = cellfun(@(x) num2str(x), ytiklabs, 'UniformOutput', false);
+%         ytiklabs = ytiklabs(1:2:end);
+%         ytiks = yticks; ytiks = ytiks(1:2:end);
+%         yticks([ytiks])
+        set(gca,'yticklabels', ytiklabs) 
+    end
+    
     set(gca,'FontSize',Fontsize, 'FontWeight', 'bold')
+    
     ylabel('Firing Rate (Hz)','FontSize',Fontsize, 'FontWeight', 'bold');
+    
+   
+%     ylabel('Norm Firing Rate','FontSize',Fontsize, 'FontWeight', 'bold');
     tt = title(ttle);
     tt.FontSize = 18;
-    xlim([psth{1, 3}(1)+100 round(psth{1, 3}(end)*0.95)]);
+    xlim([psth{1, 3}(1)+300 round(psth{1, 3}(end)*0.85)]);
     yl = ylim;
-    ylim([0 globalyl]);
+    
+    if nonLink
+        if spN == 2
+            globalyl = gyl;
+        elseif spN == 1
+            globalyl = gyl2;
+        end
+    end
+    
+   ylim([0 globalyl])
     plot([0 0], [0 globalyl], '--k', 'LineWidth', LineWidth, 'HandleVisibility', 'off');
     if spN == 2 % CR
         plot([5000 5000], [0 globalyl], '--k', 'LineWidth', LineWidth, 'HandleVisibility', 'off');
     end
     if spN == subPlotNum
-        lgnd = legend(stimuli);
-        lgnd.Position = [0.912673612414962,0.629427349279353,0.070312498696148,0.253723925133093];
-        lgnd.FontSize = 12;
+        if plotOptions.legend
+            if length(stimuli) <= 20
+                lgnd = legend(stimuli);
+                lgnd.Position = [0.912673612414962,0.629427349279353,0.070312498696148,0.253723925133093];
+%                 0.91006944593456,0.781363800486154,0.076562498509883,0.137537235418166
+                lgnd.FontSize = 8;
+            elseif length(stimuli) <= 40
+                lgnd = legend(stimuli);
+                lgnd.Position = [0.92370265195753,0.378301432367334,0.056249999115244,0.521847055590496];
+                lgnd.FontSize = 8;
+            elseif length(stimuli) > 40
+                disp("No legend - too many entries!")
+            end
+        end
     end
     % raster
     h_2(spN) = subplot(2, subPlotNum, spN+subPlotNum);
@@ -130,20 +189,46 @@ for spN = 1:subPlotNum
                     iterSize+k,'Marker','square', 'LineStyle','none','MarkerFaceColor',colors(mod(p2, length(imagesTOplot))+1, :),...
                     'MarkerEdgeColor','none','MarkerSize',MarkerSize)
                 
+%                  plot((find(psth{1, 1}(iter(k), :)==1)+(-timelimits(1))),...
+%                     iterSize+k,'Marker','|', 'LineStyle','none', 'LineWidth', 2, 'MarkerFaceColor',colors(mod(p2, length(imagesTOplot))+1, :),...
+%                     'MarkerEdgeColor',colors(mod(p2, length(imagesTOplot))+1, :),'MarkerSize',MarkerSize*3)
+
+                       
+                               
                 hold on
-                
+ 
             end
         end
     end
+ 
     set(gca,'FontSize',Fontsize, 'FontWeight', 'bold')
     ylabel('Trials (re-ordered)','FontSize',Fontsize, 'FontWeight', 'bold');
-    xlim([psth{1, 3}(1)+100 round(psth{1, 3}(end)*0.95)]);
+    xlabel('time (ms)','FontSize',Fontsize, 'FontWeight', 'bold');
+    xlim([psth{1, 3}(1)+300 round(psth{1, 3}(end)*0.85)]);
     ylim([0 size(psth{1, 1}, 1)]);
     plot([0 0], [0 size(psth{1, 1}, 1)+1], '--k', 'LineWidth', LineWidth, 'HandleVisibility', 'off');
-    
-    linkaxes(h_1, 'y');
-    %         linkaxes(h_2, 'y');
-    linkaxes([h_1(spN) h_2(spN)], 'x');
+   if spN == 2 % CR
+        plot([5000 5000], [0 size(psth{1, 1}, 1)+1], '--k', 'LineWidth', LineWidth, 'HandleVisibility', 'off');
+        
+        
+        if spN == 2 && plotOptions.showReacTrials % CR            
+            rTrialVec = plotOptions.reacTrials; % nx1 vector
+            rTrials = find(rTrialVec == 1);
+            xl = xlim;
+            for rT = 1:length(rTrials) 
+                rectangle('Position', [xl(1) rTrials(rT)-0.5 50 1], 'FaceColor', [0 0 0]);
+            end
+        end
+        
+        
+    end
+%     linkaxes(h_1, 'y');
+    if ~nonLink
+       linkaxes(h_1, 'y');
+    end
+    if ~plotOptions.binSpikes
+        linkaxes([h_1(spN) h_2(spN)], 'x');
+    end
 end
 
 

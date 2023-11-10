@@ -9,6 +9,7 @@ function h=stdshade5(amatrix,alpha,acolor,F,smth)
 % - smth defines the smoothing factor (default is no smooth)
 % smusall 2010/4/23
 
+
 if exist('acolor','var')==0 || isempty(acolor)
     acolor='r';
 end
@@ -26,7 +27,6 @@ if ne(size(F,1),1)
 end
 
 %amean=smooth(nanmean(amatrix),smth)';
-
 
 
 amean=(nanmean(amatrix));

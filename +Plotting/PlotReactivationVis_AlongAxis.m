@@ -85,7 +85,7 @@ hold on
 hp = bar(spikCounts);
 hp(1).FaceColor = bar_colors(1, :);
 hp(2).FaceColor = bar_colors(2, :);
-ylabel('Spikes/s')
+ylabel('Firing rate (Hz)')
 
 set(gca, 'Fontsize', 14, 'FontWeight', 'bold')
 

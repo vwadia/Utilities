@@ -6,7 +6,7 @@ setDiskPaths
 
 % add toolbox path
 fTripPath = [diskPath filesep 'Code' filesep 'fieldtrip-20221126'];
-addpath(genpath(fTripPath))
+addpath(genpath(fTripPath)) % it doesn't like genpath
 
 %%  read from the excel file - will need to change this to add more regions
 
@@ -14,7 +14,8 @@ addpath(genpath(fTripPath))
 % xlsFile = [boxPath filesep 'for_Advisors_VarunThesis' filesep 'IT_ImaginationPaper' filesep 'Bubbles_MNI_Mar.xlsx'];
 
 % my own file - for production
-xlsFile = [boxPath filesep 'for_Advisors_VarunThesis' filesep 'IT_ImaginationPaper' filesep 'VW_ObjectScreening_MNICoordinates.xlsx'];
+xlsFile = [boxPath filesep 'for_Advisors_VarunThesis' filesep 'IT_ImaginationPaper' filesep 'VW_Scrn_MNICoord_fieldtrip.xlsx']; task = 'Object_Screening';
+% xlsFile = [boxPath filesep 'for_Advisors_VarunThesis' filesep 'IT_ImaginationPaper' filesep 'VW_Recall_MNICoord_fieldtrip.xlsx']; task = 'Recall_Task';
 [num,txt,raw] = xlsread(xlsFile, 1, '','basic'); 
 
 meshAlpha = 0.5;
@@ -91,9 +92,14 @@ atlas = ft_read_atlas([fTripPath filesep 'template' filesep 'atlas' filesep 'bra
 
 % Steps: Read in coordinates from excel file, choose color, setup cfg structure and then plot mesh, plot dipoles 
 coordinatesLIT = [];
-LIT_col = raw(2:end, 12);
+LIT_col = raw(2:end, 12); % make sure no extra coordinates are in the same column
 
-colorIT = [0.4940 0.1840 0.5560];
+if strcmpi(task, 'Object_Screening')
+    colorIT = [0.4940 0.1840 0.5560];
+elseif strcmpi(task, 'Recall_Task')
+    colorIT = [0 0.25 0];
+end
+
 
 color_IT = []; % this will be a p x 3 array with the color repeated for the number of coordinates                                      
 
@@ -118,9 +124,13 @@ end
 
 % Steps: Read in coordinates from excel file, choose color, setup cfg structure and then plot mesh, plot dipoles 
 coordinatesRIT = [];
-RIT_col = raw(2:end, 13);
+RIT_col = raw(2:end, 13); % make sure no extra coordinates are in the same column in excel file
 
-colorIT = [0.4940 0.1840 0.5560];
+if strcmpi(task, 'Object_Screening')
+    colorIT = [0.4940 0.1840 0.5560];
+elseif strcmpi(task, 'Recall_Task') 
+    colorIT = [0 0.25 0];
+end
 
 color_IT = []; % this will be a p x 3 array with the color repeated for the number of coordinates                                      
 
@@ -231,6 +241,10 @@ for n=1:size(coordinatesRIT,1)
 end 
 
 %% save figs from different views
+outDir = [boxPath filesep 'for_Advisors_VarunThesis' filesep 'IT_ImaginationPaper' filesep 'AnatomicalMap' filesep task];
+if ~exist(outDir)
+    mkdir(outDir)
+end
 if saveFigs
     for fignum = 1:3
         
@@ -246,7 +260,8 @@ if saveFigs
                 clite.Position = [-0.9906   -0.3272    1.4386]*1e3;
                 
         end
-        print(f, [boxPath filesep 'for_Advisors_VarunThesis' filesep 'IT_ImaginationPaper' filesep 'AnatomicalMap' filesep 'GlassBrainView_' num2str(fignum)], '-dpng', '-r0')
+%         disp([boxPath filesep 'for_Advisors_VarunThesis' filesep 'IT_ImaginationPaper' filesep 'AnatomicalMap' filesep 'GlassBrainView_' num2str(fignum)])
+        print(f, [outDir filesep 'GlassBrainView_' num2str(fignum)], '-dpng', '-r300')
         
     end
 end

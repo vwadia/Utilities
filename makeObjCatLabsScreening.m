@@ -233,7 +233,8 @@ elseif strcmp(subID, 'P75CS_ObjScreen') || strcmp(subID, 'P76CSFast') || strcmp(
         || strcmp(subID, 'P80CS_ReScreecRecall_2') || strcmp(subID, '81CS_forReal') || strcmp(subID, 'P81CS_2') || strcmp(subID, 'P81CS_AM')...
         || strcmp(subID, 'P81_synth') || strcmp(subID, 'P82CS_1') || strcmp(subID, 'P82CS_CL_1') || strcmp(subID, 'P82CS_CLReScreen') || strcmp(subID, 'P84CS_1')...
         || strcmp(subID, 'P84CS_RecScreen_1') || strcmp(subID, 'P84CS_ReScreenRecall_1') || strcmp(subID, 'P84CS_RecScreen_2') || strcmp(subID, 'P84CS_ReScreenRecall_2')...
-        || strcmp(subID, 'P85CS_1') || strcmp(subID, 'P85CS_CLReScreen') || strcmp(subID, 'P85CS_RecScreen_1') || strcmp(subID, 'P85CS_ReScreenRecall')
+        || strcmp(subID, 'P85CS_1') || strcmp(subID, 'P85CS_CLReScreen') || strcmp(subID, 'P85CS_RecScreen_1') || strcmp(subID, 'P85CS_ReScreenRecall') || strcmp(subID, 'P87CS_1')...
+        || strcmp(subID, 'P86CS_1') || strcmp(subID, 'P87CS_Fam') || strcmp(subID, 'P87CS_Fam_2') || strcmp(subID, 'P88CS_00') || strcmp(subID, 'P90CS_RecCLScreen') %|| strcmp(subID, 'P86CS_wFam')
     
     anovaType = 'CategoryObject';
     faceInds = 134:210;
@@ -248,6 +249,75 @@ elseif strcmp(subID, 'P75CS_ObjScreen') || strcmp(subID, 'P76CSFast') || strcmp(
     catOrder(ismember(order, vegInds)) = 3;
     catOrder(ismember(order, animInds)) = 4;
     catOrder(ismember(order, objInds)) = 5;
+    
+% -------------------- P87CS Fam Face Screen #1 (Faces and Objects) -------------------
+% elseif strcmp(subID, 'P87CS_Fam') 
+%     
+%     anovaType = 'CategoryObject';
+%     faceInds = [134:210 501:502 504:507 510:517 519:528 530:532 535:537 546 553 556 561:620]; 
+%     objInds = [85:133 236:255 283:289 291:356 409:500]; % chnged to include 290 in text vwadia march 2022
+%     textInds = [264:282 290 400:408];
+%     vegInds = [211:235 357:399];
+%     animInds = [1:84 256:263];
+%     famfaceInds = [503 508:509 518 529 533:534 538:545 547:552 554:555 557:560]; % hand picked *verified* familiar faces - all others are in the face Inds set
+%     
+%     catOrder = zeros(length(order), 1);
+%     catOrder(ismember(order, faceInds)) = 1;
+%     catOrder(ismember(order, textInds)) = 2;
+%     catOrder(ismember(order, vegInds)) = 3;
+%     catOrder(ismember(order, animInds)) = 4;
+%     catOrder(ismember(order, objInds)) = 5;
+%     catOrder(ismember(order, famfaceInds)) = 6;
+%  
+% % -------------------- P87CS Fam Face Screen #2 (Faces and Objects) -------------------
+% elseif strcmp(subID, 'P87CS_Fam_2') 
+%     
+%     anovaType = 'CategoryObject';
+%     faceInds = [134:210 502 518:519 527 529 532 537 540 544 546 561:632]; 
+%     objInds = [85:133 236:255 283:289 291:356 409:500]; % chnged to include 290 in text vwadia march 2022
+%     textInds = [264:282 290 400:408];
+%     vegInds = [211:235 357:399];
+%     animInds = [1:84 256:263];
+%     famfaceInds = [501 503:517 520:526 528 530:531 533:536 538:539 541:543 545 547:560]; % hand picked *verified* familiar faces - all others are in the face Inds set
+%     
+%     catOrder = zeros(length(order), 1);
+%     catOrder(ismember(order, faceInds)) = 1;
+%     catOrder(ismember(order, textInds)) = 2;
+%     catOrder(ismember(order, vegInds)) = 3;
+%     catOrder(ismember(order, animInds)) = 4;
+%     catOrder(ismember(order, objInds)) = 5;
+%     catOrder(ismember(order, famfaceInds)) = 6;
+%     
+% -------------------- P86CS Fam Face Screen #1 (Faces and Objects) -------------------
+elseif strcmp(subID, 'P86CS_wFam') 
+    
+    anovaType = 'CategoryObject';
+    faceInds = [134:210]; 
+    objInds = [85:133 236:255 283:289 291:356 409:500]; % chnged to include 290 in text vwadia march 2022
+    textInds = [264:282 290 400:408];
+    vegInds = [211:235 357:399];
+    animInds = [1:84 256:263];
+    famfaceInds = [501:600];
+    colUnfamFaceInds = [601:700];
+    
+    catOrder = zeros(length(order), 1);
+    catOrder(ismember(order, faceInds)) = 1;
+    catOrder(ismember(order, textInds)) = 2;
+    catOrder(ismember(order, vegInds)) = 3;
+    catOrder(ismember(order, animInds)) = 4;
+    catOrder(ismember(order, objInds)) = 5;
+    catOrder(ismember(order, famfaceInds)) = 6;
+    catOrder(ismember(order, colUnfamFaceInds)) = 7;
+     
+% -------------------- P87CS Fam Face Screen (Faces only) -------------------
+elseif strcmp(subID, 'P87CS_FaceFam')
+    anovaType = 'CategoryObject';
+    famfaceInds = 1:60;
+    unfamfaceInds = 61:132;
+    
+    catOrder = zeros(length(order), 1);
+    catOrder(ismember(order, famfaceInds)) = 1;
+    catOrder(ismember(order, unfamfaceInds)) = 2;
 end
 
 end
